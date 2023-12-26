@@ -5,6 +5,7 @@ package ethstorage
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
@@ -41,13 +42,20 @@ type StorageManager struct {
 	lastKvIdx         uint64     // lastKvIndex in the most-recent-finalized L1 block
 	l1Source          Il1Source
 	blobMetas         map[uint64][32]byte
+
+	// resource context: manage cancellation of  DownloadAllMetas
+	resCtx    context.Context
+	resCancel context.CancelFunc
 }
 
 func NewStorageManager(sm *ShardManager, l1Source Il1Source) *StorageManager {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &StorageManager{
 		shardManager: sm,
 		l1Source:     l1Source,
 		blobMetas:    map[uint64][32]byte{},
+		resCtx:       ctx,
+		resCancel:    cancel,
 	}
 }
 
@@ -439,6 +447,11 @@ func (s *StorageManager) downloadMetaInRange(from, to, batchSize, taskId uint64)
 			"progress", fmt.Sprintf("%.1f%%", float64((from-rangeStart)*100)/float64(to-rangeStart)),
 			"taskId", taskId)
 
+		select {
+		case <-s.resCtx.Done():
+			return nil
+		default:
+		}
 		from = batchLimit
 	}
 	return nil
@@ -555,6 +568,7 @@ func (s *StorageManager) MaxKvSize() uint64 {
 func (s *StorageManager) MaxKvSizeBits() uint64 {
 	return s.shardManager.kvSizeBits
 }
+
 func (s *StorageManager) ChunksPerKvBits() uint64 {
 	return s.shardManager.chunksPerKvBits
 }
@@ -564,5 +578,6 @@ func (s *StorageManager) KvEntriesBits() uint64 {
 }
 
 func (s *StorageManager) Close() error {
+	s.resCancel()
 	return s.shardManager.Close()
 }
