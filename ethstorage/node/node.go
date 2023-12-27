@@ -296,15 +296,17 @@ func (n *EsNode) RequestL2Range(ctx context.Context, start, end uint64) (uint64,
 func (n *EsNode) Close() error {
 	var result *multierror.Error
 
+	log.Info("----------------Start Close Node-----------------")
 	if n.server != nil {
 		n.server.Stop()
 	}
+	log.Info("----------------Closing P2P Node----------------")
 	if n.p2pNode != nil {
 		if err := n.p2pNode.Close(); err != nil {
 			result = multierror.Append(result, fmt.Errorf("failed to close p2p node: %w", err))
 		}
 	}
-
+	log.Info("----------------Closing downloader----------------")
 	if n.downloader != nil {
 		if err := n.downloader.Close(); err != nil {
 			result = multierror.Append(result, fmt.Errorf("failed to close downloader: %w", err))
@@ -315,16 +317,16 @@ func (n *EsNode) Close() error {
 	// 		result = multierror.Append(result, fmt.Errorf("failed to close p2p signer: %w", err))
 	// 	}
 	// }
-
+	log.Info("----------------Closing resources----------------")
 	if n.resourcesClose != nil {
 		n.resourcesClose()
 	}
-
+	log.Info("----------------Closing l1HeadsSub----------------")
 	// stop L1 heads feed
 	if n.l1HeadsSub != nil {
 		n.l1HeadsSub.Unsubscribe()
 	}
-
+	log.Info("----------------Closing miner----------------")
 	if n.miner != nil {
 		n.miner.Close()
 	}
@@ -347,11 +349,12 @@ func (n *EsNode) Close() error {
 	// if n.l2Source != nil {
 	// 	n.l2Source.Close()
 	// }
-
+	log.Info("----------------Closing l1Source----------------")
 	// close L1 data source
 	if n.l1Source != nil {
 		n.l1Source.Close()
 	}
+	log.Info("----------------Closing storageManager----------------")
 	if n.storageManager != nil {
 		n.storageManager.Close()
 	}

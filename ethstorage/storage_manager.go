@@ -449,6 +449,7 @@ func (s *StorageManager) downloadMetaInRange(from, to, batchSize, taskId uint64)
 
 		select {
 		case <-s.resCtx.Done():
+			log.Info("StorageManager res done, return")
 			return nil
 		default:
 		}
@@ -578,6 +579,7 @@ func (s *StorageManager) KvEntriesBits() uint64 {
 }
 
 func (s *StorageManager) Close() error {
+	log.Info("Close StorageManager")
 	s.resCancel()
 	return s.shardManager.Close()
 }
