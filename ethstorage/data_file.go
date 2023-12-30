@@ -93,7 +93,7 @@ func Create(filename string, chunkIdxStart, chunkIdxLen, epoch, maxKvSize, encod
 		return nil, err
 	}
 	// actual initialization is done when synchronize
-	err = fallocate.Fallocate(file, int64((chunkSize+32)*chunkIdxLen), int64(HEADER_SIZE))
+	err = fallocate.Fallocate(file, int64((32)*chunkIdxLen), int64(HEADER_SIZE))
 	if err != nil {
 		return nil, err
 	}
@@ -158,15 +158,16 @@ func (df *DataFile) Read(chunkIdx uint64, len int) ([]byte, error) {
 	if len > int(df.chunkSize) {
 		return nil, fmt.Errorf("read too large")
 	}
-	md := make([]byte, len)
-	n, err := df.file.ReadAt(md, HEADER_SIZE+int64(chunkIdx-df.chunkIdxStart)*int64(df.chunkSize))
-	if err != nil {
-		return nil, err
-	}
-	if n != len {
-		return nil, fmt.Errorf("not full read")
-	}
-	return md, nil
+	return nil, fmt.Errorf("not full read")
+	// md := make([]byte, len)
+	// n, err := df.file.ReadAt(md, HEADER_SIZE+int64(chunkIdx-df.chunkIdxStart)*int64(df.chunkSize))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if n != len {
+	// 	return nil, fmt.Errorf("not full read")
+	// }
+	// return md, nil
 }
 
 // Read raw chunk data from the storage file.
@@ -174,16 +175,16 @@ func (df *DataFile) ReadSample(sampleIdx uint64) (common.Hash, error) {
 	if !df.ContainsSample(sampleIdx) {
 		return common.Hash{}, fmt.Errorf("sample not found")
 	}
-
-	md := make([]byte, 32)
-	n, err := df.file.ReadAt(md, HEADER_SIZE+int64(sampleIdx*32)-int64(df.chunkIdxStart*df.chunkSize))
-	if err != nil {
-		return common.Hash{}, err
-	}
-	if n != 32 {
-		return common.Hash{}, fmt.Errorf("not full read")
-	}
-	return common.BytesToHash(md), nil
+	return common.Hash{}, fmt.Errorf("not full read")
+	// md := make([]byte, 32)
+	// n, err := df.file.ReadAt(md, HEADER_SIZE+int64(sampleIdx*32)-int64(df.chunkIdxStart*df.chunkSize))
+	// if err != nil {
+	// 	return common.Hash{}, err
+	// }
+	// if n != 32 {
+	// 	return common.Hash{}, fmt.Errorf("not full read")
+	// }
+	// return common.BytesToHash(md), nil
 }
 
 // Write the chunk bytes to the file.
@@ -195,9 +196,9 @@ func (df *DataFile) Write(chunkIdx uint64, b []byte) error {
 	if len(b) > int(df.chunkSize) {
 		return fmt.Errorf("write data too large")
 	}
-
-	_, err := df.file.WriteAt(b, HEADER_SIZE+int64(chunkIdx-df.chunkIdxStart)*int64(df.chunkSize))
-	return err
+	return nil
+	// _, err := df.file.WriteAt(b, HEADER_SIZE+int64(chunkIdx-df.chunkIdxStart)*int64(df.chunkSize))
+	// return err
 }
 
 // Read the metadata of the kv
@@ -207,7 +208,7 @@ func (df *DataFile) ReadMeta(kvIdx uint64) ([]byte, error) {
 	}
 
 	b := make([]byte, df.metaSize)
-	_, err := df.file.ReadAt(b, int64(HEADER_SIZE+df.chunkIdxLen*df.chunkSize+(kvIdx-df.KvIdxStart())*df.metaSize))
+	_, err := df.file.ReadAt(b, int64(HEADER_SIZE+(kvIdx-df.KvIdxStart())*df.metaSize))
 	return b, err
 }
 
@@ -221,7 +222,7 @@ func (df *DataFile) WriteMeta(kvIdx uint64, b []byte) error {
 		return fmt.Errorf("write meta too large")
 	}
 
-	_, err := df.file.WriteAt(b, int64(HEADER_SIZE+df.chunkIdxLen*df.chunkSize+(kvIdx-df.KvIdxStart())*df.metaSize))
+	_, err := df.file.WriteAt(b, int64(HEADER_SIZE+(kvIdx-df.KvIdxStart())*df.metaSize))
 	return err
 }
 
