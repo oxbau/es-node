@@ -186,8 +186,9 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 		if m != nil {
 			go m.RecordBandwidth(resourcesCtx, bwc)
 		}
+
 		go func() {
-			ticker := time.NewTicker(time.Minute)
+			ticker := time.NewTicker(10 * time.Minute)
 			defer ticker.Stop()
 			for {
 				select {
@@ -203,7 +204,6 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 					return
 				}
 			}
-			n.syncCl.ReportPeerSummary(n.dv5Udp)
 		}()
 	}
 	return nil
