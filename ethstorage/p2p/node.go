@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -83,6 +84,7 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 			n.connMgr = extra.ConnectionManager()
 		}
 
+		peers := make(map[peer.ID]network.Conn)
 		// Activate the P2P req-resp sync
 		n.syncCl = protocol.NewSyncClient(log, rollupCfg, n.host.NewStream, storageManager, setup.SyncerParams(), db, m, feed)
 		n.host.Network().Notify(&network.NotifyBundle{
@@ -119,6 +121,8 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 				if !added {
 					log.Info("Close connection as AddPeer fail", "peer", remotePeerId)
 					conn.Close()
+				} else {
+					peers[conn.RemotePeer()] = conn
 				}
 			},
 			DisconnectedF: func(nw network.Network, conn network.Conn) {
@@ -127,6 +131,7 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 					return
 				}
 				n.syncCl.RemovePeer(conn.RemotePeer())
+				delete(peers, conn.RemotePeer())
 			},
 		})
 		n.syncCl.UpdateMaxPeers(int(setup.(*Config).PeersHi))
@@ -143,9 +148,10 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 			added := n.syncCl.AddPeer(conn.RemotePeer(), shards, conn.Stat().Direction)
 			if !added {
 				conn.Close()
+			} else {
+				peers[conn.RemotePeer()] = conn
 			}
 		}
-		go n.syncCl.ReportPeerSummary()
 		n.syncSrv = protocol.NewSyncServer(rollupCfg, storageManager, m)
 
 		blobByRangeHandler := protocol.MakeStreamHandler(resourcesCtx, log.New("serve", "blobs_by_range"), n.syncSrv.HandleGetBlobsByRangeRequest)
@@ -180,6 +186,25 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 		if m != nil {
 			go m.RecordBandwidth(resourcesCtx, bwc)
 		}
+		go func() {
+			ticker := time.NewTicker(time.Minute)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					for _, conn := range peers {
+						log.Warn("P2P detail", "id", conn.ID(), "addr", conn.RemoteMultiaddr(), "direction", conn.Stat().Direction)
+					}
+					for _, node := range n.dv5Udp.AllNodes() {
+						log.Warn("Node detail", "id", node.ID(), "addr", node.IP().String(), "udp", node.UDP(), "tcp", node.TCP())
+					}
+				case <-resourcesCtx.Done():
+					log.Info("P2P Detail stop")
+					return
+				}
+			}
+			n.syncCl.ReportPeerSummary(n.dv5Udp)
+		}()
 	}
 	return nil
 }
