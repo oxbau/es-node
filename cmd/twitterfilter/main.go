@@ -10,13 +10,14 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 const (
-	batchSize    = 80
+	batchSize    = 100
 	twitterToken = "AAAAAAAAAAAAAAAAAAAAAH9GswEAAAAAAblgkjd092bCcLoTkrASEk2i05Y%3DExcjsVl6mPL1hcbDy2OIs18kVsbwXBjIe9m1nP6h3u9zgOVbir"
 )
 
@@ -163,7 +164,6 @@ func (f *Filter) StartFiltering() {
 	for scanner.Scan() {
 		// "2024/03/14 7:05:40 PM GMT+8","","0xd8367A027FAB084a8654F2C3132288Ef372539A6","https://twitter.com/liheact/status/1768231011244970157","","liheact@gmail.com"
 		line := scanner.Text()
-		fmt.Println(line)
 		l := strings.Replace(line, "\"", "", 100)
 		items := strings.Split(l, ",")
 		if len(items) < 4 {
@@ -192,8 +192,10 @@ func (f *Filter) StartFiltering() {
 		recordId++
 
 		if len(batch)%batchSize == 0 {
+			fmt.Println(recordId)
 			f.FetchBatchAndOutput(batch)
 			batch = make([]*Record, 0)
+			time.Sleep(time.Minute)
 		}
 	}
 
@@ -215,6 +217,7 @@ func (f *Filter) FetchBatchAndOutput(batch []*Record) {
 
 	result, err := authTwitterWithToken(tweetIDs, twitterToken)
 	if err != nil {
+		fmt.Println(err.Error())
 		for _, r := range batch {
 			f.toRerunFile.WriteString(r.line + "\n")
 		}
