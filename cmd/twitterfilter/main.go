@@ -178,6 +178,10 @@ func (f *Filter) StartFiltering() {
 
 		tweetId, err := getTweetID(items[3])
 		if err != nil {
+			if tweetId != "" {
+				f.filterOutFile.WriteString(fmt.Sprintf("\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+					0, items[0], items[2], items[1], items[3], err.Error))
+			}
 			continue
 		}
 
@@ -185,7 +189,7 @@ func (f *Filter) StartFiltering() {
 			RecordId:   recordId,
 			RecodeTime: items[0],
 			Address:    common.HexToAddress(items[2]),
-			Email:      items[5],
+			Email:      items[1],
 			Tweet: &Tweet{
 				TweetId:  tweetId,
 				TweetUrl: items[3],
@@ -222,8 +226,7 @@ func (f *Filter) FetchBatchAndOutput(batch []*Record) {
 	if err != nil {
 		fmt.Println("fetch error", err.Error())
 		for _, r := range batch {
-			f.toRerunFile.WriteString(r.line)
-			f.toRerunFile.WriteString("\n")
+			f.toRerunFile.WriteString(fmt.Sprintf("%s\n", r.line))
 		}
 		return
 	}
@@ -305,6 +308,9 @@ func getTweetID(url string) (string, error) {
 	tweetID := strings.Split(parts[len(parts)-1], "?")[0]
 	if !regexp.MustCompile("^[0-9]+$").MatchString(tweetID) {
 		return "", errors.New("Invalid Tweet URL")
+	}
+	if !strings.HasPrefix(tweetID, "1") {
+		return tweetID, errors.New(fmt.Sprintf("invalid tweet ID %s, Id should start with 1", tweetID))
 	}
 	return tweetID, nil
 }
