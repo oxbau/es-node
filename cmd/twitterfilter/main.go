@@ -84,9 +84,9 @@ type Record struct {
 }
 
 func (r *Record) String() string {
-	return fmt.Sprintf("\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\"\n",
-		r.RecordId, r.RecodeTime, r.Address.Hex(), r.Email, r.Tweet.TweetUrl, r.TwitterUser.Account, r.TwitterUser.Name, r.TwitterUser.Followers,
-		r.TwitterUser.TweetCount, removeCharacters(r.TwitterUser.Description), removeCharacters(r.Tweet.Text))
+	return fmt.Sprintf("\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%s\"\n",
+		r.RecordId, r.RecodeTime, r.Address.Hex(), r.Email, r.Tweet.TweetUrl, r.TwitterUser.Account, r.TwitterUser.Followers, r.TwitterUser.TweetCount,
+		removeCharacters(r.TwitterUser.Name), removeCharacters(r.TwitterUser.Description), removeCharacters(r.Tweet.Text))
 }
 
 func (r *Record) StringError() string {
@@ -95,12 +95,13 @@ func (r *Record) StringError() string {
 }
 
 func removeCharacters(in string) string {
+	in = strings.Replace(in, "\"", "", 100)
 	in = strings.Replace(in, "\r", "", 100)
 	return strings.Replace(in, "\n", "", 100)
 }
 
 func PassHeader() string {
-	return "\"RecodeId\",\"RecodeTime\",\"Address\",\"Email\",\"TweetUrl\",\"Account\",\"UserName\",\"Followers\",\"TweetCount\",\"Description\",\"Text\",\"Error\"\n"
+	return "\"RecodeId\",\"RecodeTime\",\"Address\",\"Email\",\"TweetUrl\",\"Account\",\"Followers\",\"TweetCount\",\"UserName\",\"Description\",\"Text\",\"Error\"\n"
 }
 
 func FilterOutHeader() string {
@@ -266,6 +267,7 @@ func (f *Filter) FetchBatchAndOutput(batch []*Record) {
 		if !ok {
 			r.Error = fmt.Sprintf("Twitter user %s not found in the response", tweet.UserId)
 			f.filterOutFile.WriteString(r.StringError())
+			continue
 		}
 
 		address := common.HexToAddress(regexp.MustCompile("0x[0-9a-fA-F]{40}").FindString(tweet.Text))
@@ -273,6 +275,13 @@ func (f *Filter) FetchBatchAndOutput(batch []*Record) {
 			r.Error = fmt.Sprintf("Tweet text do not contain the same address filled in the form, address in form %s, address in tweet %s",
 				r.Address, address)
 			f.filterOutFile.WriteString(r.StringError())
+			continue
+		}
+
+		if r.TwitterUser.Followers < 100 {
+			r.Error = fmt.Sprintf("Twitter user has less than 100 followers (%d).", r.TwitterUser.Followers)
+			f.filterOutFile.WriteString(r.StringError())
+			continue
 		}
 
 		r.Tweet.UserId = tweet.UserId
