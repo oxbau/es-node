@@ -166,33 +166,39 @@ func (f *Filter) StartFiltering() {
 	batch := make([]*Record, 0)
 	for scanner.Scan() {
 		// "2024/03/14 7:05:40 PM GMT+8","","0xd8367A027FAB084a8654F2C3132288Ef372539A6","https://twitter.com/liheact/status/1768231011244970157","","liheact@gmail.com"
+		// "2024/03/15 6:04:37 PM GMT+8","ucoxrey@gmail.com","0x5260c7717325B4B872d45a461cA669B4Cda64fD8","https://x.com/0xreynn/status/1768578978229665885?s=20",""
+		// 1314,"0x3C8B97f934B37D03EE49fe27f17f054466eCDdD7","https://twitter.com/wordorexia/status/1769220169648468340?t=nL58F-72j1CAoEkGcqkEvg&s=19","wordorexia@gmail.com","Wordorexia Writer","3/17/2024, 12:34:18 PM","f6b3cec08952f1"
 		line := scanner.Text()
 		l := strings.Replace(line, "\"", "", 100)
 		items := strings.Split(l, ",")
-		if len(items) < 6 {
+		if len(items) < 4 {
 			continue
 		}
-		if !strings.HasPrefix(items[2], "https://twitter.com/") {
+		//	recordTime, address, email, twitterUrl := items[0], items[2], items[5], items[3]
+		recordTime, address, email, twitterUrl := items[0], items[2], items[1], items[3]
+		// recordTime, address, email, twitterUrl := items[5], items[1], items[3], items[2]
+
+		if !strings.HasPrefix(items[2], "https://twitter.com/") && !strings.HasPrefix(twitterUrl, "https://x.com/") {
 			continue
 		}
 
-		tweetId, err := getTweetID(items[2])
+		tweetId, err := getTweetID(twitterUrl)
 		if err != nil {
 			if tweetId != "" {
 				f.filterOutFile.WriteString(fmt.Sprintf("\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-					0, items[5], items[1], items[3], items[2], err.Error()))
+					0, recordTime, address, email, twitterUrl, err.Error()))
 			}
 			continue
 		}
 
 		batch = append(batch, &Record{
 			RecordId:   recordId,
-			RecodeTime: items[5],
-			Address:    common.HexToAddress(items[1]),
-			Email:      items[3],
+			RecodeTime: recordTime,
+			Address:    common.HexToAddress(address),
+			Email:      email,
 			Tweet: &Tweet{
 				TweetId:  tweetId,
-				TweetUrl: items[2],
+				TweetUrl: twitterUrl,
 			},
 			line: line,
 		})
@@ -209,6 +215,13 @@ func (f *Filter) StartFiltering() {
 	if len(batch) > 0 {
 		f.FetchBatchAndOutput(batch)
 		batch = make([]*Record, 0)
+	}
+}
+
+func (f *Filter) Reformat(batch []*Record) {
+	for _, r := range batch {
+		f.toRerunFile.WriteString(fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+			r.RecodeTime, r.Email, r.Address.Hex(), r.Tweet.TweetUrl, ""))
 	}
 }
 
