@@ -169,30 +169,30 @@ func (f *Filter) StartFiltering() {
 		line := scanner.Text()
 		l := strings.Replace(line, "\"", "", 100)
 		items := strings.Split(l, ",")
-		if len(items) < 4 {
+		if len(items) < 6 {
 			continue
 		}
-		if !strings.HasPrefix(items[3], "https://twitter.com/") {
+		if !strings.HasPrefix(items[2], "https://twitter.com/") {
 			continue
 		}
 
-		tweetId, err := getTweetID(items[3])
+		tweetId, err := getTweetID(items[2])
 		if err != nil {
 			if tweetId != "" {
 				f.filterOutFile.WriteString(fmt.Sprintf("\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-					0, items[0], items[2], items[1], items[3], err.Error))
+					0, items[5], items[1], items[3], items[2], err.Error()))
 			}
 			continue
 		}
 
 		batch = append(batch, &Record{
 			RecordId:   recordId,
-			RecodeTime: items[0],
-			Address:    common.HexToAddress(items[2]),
-			Email:      items[1],
+			RecodeTime: items[5],
+			Address:    common.HexToAddress(items[1]),
+			Email:      items[3],
 			Tweet: &Tweet{
 				TweetId:  tweetId,
-				TweetUrl: items[3],
+				TweetUrl: items[2],
 			},
 			line: line,
 		})
