@@ -95,6 +95,8 @@ func (r *Record) StringError() string {
 }
 
 func removeCharacters(in string) string {
+	in = strings.Replace(in, "“", "", 100)
+	in = strings.Replace(in, "”", "", 100)
 	in = strings.Replace(in, "\"", "", 100)
 	in = strings.Replace(in, "\r", "", 100)
 	return strings.Replace(in, "\n", "", 100)
@@ -218,9 +220,10 @@ func (f *Filter) FetchBatchAndOutput(batch []*Record) {
 
 	result, err := authTwitterWithToken(tweetIDs, twitterToken)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("fetch error", err.Error())
 		for _, r := range batch {
-			f.toRerunFile.WriteString(r.line + "\n")
+			f.toRerunFile.WriteString(r.line)
+			f.toRerunFile.WriteString("\n")
 		}
 		return
 	}
@@ -278,8 +281,8 @@ func (f *Filter) FetchBatchAndOutput(batch []*Record) {
 			continue
 		}
 
-		if r.TwitterUser.Followers < 100 {
-			r.Error = fmt.Sprintf("Twitter user has less than 100 followers (%d).", r.TwitterUser.Followers)
+		if user.Followers < 100 {
+			r.Error = fmt.Sprintf("Twitter user has less than 100 followers (%d).", user.Followers)
 			f.filterOutFile.WriteString(r.StringError())
 			continue
 		}
