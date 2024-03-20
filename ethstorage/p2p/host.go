@@ -9,7 +9,6 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	lconf "github.com/libp2p/go-libp2p/config"
-	"github.com/libp2p/go-libp2p/core/connmgr"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -30,14 +29,12 @@ import (
 type ExtraHostFeatures interface {
 	host.Host
 	ConnectionGater() ConnectionGater
-	ConnectionManager() connmgr.ConnManager
 }
 
 type extraHost struct {
 	host.Host
-	gater   ConnectionGater
-	connMgr connmgr.ConnManager
-	log     log.Logger
+	gater ConnectionGater
+	log   log.Logger
 
 	staticPeers []*peer.AddrInfo
 
@@ -48,10 +45,6 @@ func (e *extraHost) ConnectionGater() ConnectionGater {
 	return e.gater
 }
 
-func (e *extraHost) ConnectionManager() connmgr.ConnManager {
-	return e.connMgr
-}
-
 func (e *extraHost) Close() error {
 	close(e.quitC)
 	return e.Host.Close()
@@ -60,9 +53,6 @@ func (e *extraHost) Close() error {
 func (e *extraHost) initStaticPeers() {
 	for _, addr := range e.staticPeers {
 		e.Peerstore().AddAddrs(addr.ID, addr.Addrs, time.Hour*24*7)
-		// We protect the peer, so the connection manager doesn't decide to prune it.
-		// We tag it with "static" so other protects/unprotects with different tags don't affect this protection.
-		e.connMgr.Protect(addr.ID, "static")
 		// Try to dial the node in the background
 		go func(addr *peer.AddrInfo) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
@@ -148,11 +138,6 @@ func (conf *Config) Host(log log.Logger, reporter metrics.Reporter) (host.Host, 
 		return nil, fmt.Errorf("failed to open connection gater: %w", err)
 	}
 
-	connMngr, err := conf.ConnMngr(conf)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open connection manager: %w", err)
-	}
-
 	listenAddr, err := addrFromIPAndPort(conf.ListenIP, conf.ListenTCPPort)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make listen addr: %w", err)
@@ -181,7 +166,6 @@ func (conf *Config) Host(log log.Logger, reporter metrics.Reporter) (host.Host, 
 		// host will start and listen to network directly after construction from config.
 		libp2p.ListenAddrs(listenAddr),
 		libp2p.ConnectionGater(connGtr),
-		libp2p.ConnectionManager(connMngr),
 		// libp2p.ResourceManager(nil), // TODO use resource manager interface to manage resources per peer better.
 		libp2p.NATManager(nat),
 		libp2p.Peerstore(ps),
@@ -215,7 +199,6 @@ func (conf *Config) Host(log log.Logger, reporter metrics.Reporter) (host.Host, 
 
 	out := &extraHost{
 		Host:        h,
-		connMgr:     connMngr,
 		log:         log,
 		staticPeers: staticPeers,
 		quitC:       make(chan struct{}),

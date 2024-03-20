@@ -393,10 +393,6 @@ func (n *NodeP2P) DiscoveryProcess(ctx context.Context, log log.Logger, l1ChainI
 				continue
 			}
 			_ = pstore.AddPubKey(info.ID, pub)
-			// Tag the peer, we'd rather have the connection manager prune away old peers,
-			// or peers on different chains, or anyone we have not seen via discovery.
-			// There is no tag score decay yet, so just set it to 42.
-			n.ConnectionManager().TagPeer(info.ID, fmt.Sprintf("ethstorage-%d-%d", dat.ChainID, dat.Version), 42)
 			log.Debug("Discovered peer", "peer", info.ID, "nodeID", node.ID(), "addr", info.Addrs[0])
 		case <-connectTicker.C:
 			connected := n.Host().Network().Peers()

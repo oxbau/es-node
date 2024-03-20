@@ -21,7 +21,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/net/conngater"
-	cmgr "github.com/libp2p/go-libp2p/p2p/net/connmgr"
 )
 
 var DefaultBootnodes = []*enode.Node{
@@ -92,10 +91,6 @@ type Config struct {
 	HostSecurity        []libp2p.Option
 	NoTransportSecurity bool
 
-	PeersLo    uint
-	PeersHi    uint
-	PeersGrace time.Duration
-
 	MeshD     int // topic stable mesh target count
 	MeshDLo   int // topic stable mesh low watermark
 	MeshDHi   int // topic stable mesh high watermark
@@ -123,7 +118,6 @@ type Config struct {
 	Store ds.Batching
 
 	ConnGater func(conf *Config) (connmgr.ConnectionGater, error)
-	ConnMngr  func(conf *Config) (connmgr.ConnManager, error)
 }
 
 //go:generate mockery --name ConnectionGater
@@ -153,17 +147,8 @@ func DefaultConnGater(conf *Config) (connmgr.ConnectionGater, error) {
 	return conngater.NewBasicConnectionGater(conf.Store)
 }
 
-func DefaultConnManager(conf *Config) (connmgr.ConnManager, error) {
-	return cmgr.NewConnManager(
-		int(conf.PeersLo),
-		int(conf.PeersHi),
-		cmgr.WithGracePeriod(conf.PeersGrace),
-		cmgr.WithSilencePeriod(time.Minute),
-		cmgr.WithEmergencyTrim(true))
-}
-
 func (conf *Config) TargetPeers() uint {
-	return conf.PeersLo
+	return conf.SyncParams.MaxPeers
 }
 
 func (conf *Config) Disabled() bool {
@@ -203,12 +188,6 @@ func (conf *Config) Check() error {
 		if conf.DiscoveryDB == nil {
 			return errors.New("discovery requires a persistent or in-memory discv5 db, but found none")
 		}
-	}
-	if conf.PeersLo == 0 || conf.PeersHi == 0 || conf.PeersLo > conf.PeersHi {
-		return fmt.Errorf("peers lo/hi tides are invalid: %d, %d", conf.PeersLo, conf.PeersHi)
-	}
-	if conf.ConnMngr == nil {
-		return errors.New("need a connection manager")
 	}
 	if conf.ConnGater == nil {
 		return errors.New("need a connection gater")

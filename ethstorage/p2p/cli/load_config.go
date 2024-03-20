@@ -73,7 +73,6 @@ func NewConfig(ctx *cli.Context, blockTime uint64) (*p2p.Config, error) {
 	}
 
 	conf.ConnGater = p2p.DefaultConnGater
-	conf.ConnMngr = p2p.DefaultConnManager
 
 	return conf, nil
 }
@@ -268,9 +267,6 @@ func loadLibp2pOpts(conf *p2p.Config, ctx *cli.Context) error {
 		}
 	}
 
-	conf.PeersLo = ctx.GlobalUint(flags.PeersLo.Name)
-	conf.PeersHi = ctx.GlobalUint(flags.PeersHi.Name)
-	conf.PeersGrace = ctx.GlobalDuration(flags.PeersGrace.Name)
 	conf.NAT = ctx.GlobalBool(flags.NAT.Name)
 	conf.UserAgent = ctx.GlobalString(flags.UserAgent.Name)
 	conf.TimeoutNegotiation = ctx.GlobalDuration(flags.TimeoutNegotiation.Name)
@@ -366,10 +362,12 @@ func loadSyncerParams(conf *p2p.Config, ctx *cli.Context) error {
 	maxRequestSize := ctx.GlobalUint64(flags.MaxRequestSize.Name)
 	syncConcurrency := ctx.GlobalUint64(flags.SyncConcurrency.Name)
 	fillEmptyConcurrency := ctx.GlobalInt(flags.FillEmptyConcurrency.Name)
+	maxPeers := ctx.GlobalUint(flags.MaxPeersFlag.Name)
 	if syncConcurrency < 1 {
 		return fmt.Errorf("p2p.sync.concurrency param is invalid: the value should larger than 0")
 	}
 	conf.SyncParams = &protocol.SyncerParams{
+		MaxPeers:              maxPeers,
 		MaxRequestSize:        maxRequestSize,
 		SyncConcurrency:       syncConcurrency,
 		FillEmptyConcurrency:  fillEmptyConcurrency,

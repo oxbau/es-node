@@ -184,26 +184,12 @@ var (
 		Value:    8000, // The upper limit of devnet-11 geth node
 		EnvVar:   p2pEnv("META_BATCH_SIZE"),
 	}
-	PeersLo = cli.UintFlag{
-		Name:     "p2p.peers.lo",
-		Usage:    "Low-tide peer count. The node actively searches for new peer connections if below this amount.",
+	MaxPeersFlag = cli.IntFlag{
+		Name:     "p2p.max.peers",
+		Usage:    "Maximum number of network peers (network disabled if set to 0)",
 		Required: false,
-		Value:    20,
-		EnvVar:   p2pEnv("PEERS_LO"),
-	}
-	PeersHi = cli.UintFlag{
-		Name:     "p2p.peers.hi",
-		Usage:    "High-tide peer count. The node starts pruning peer connections slowly after reaching this number.",
-		Required: false,
-		Value:    30,
-		EnvVar:   p2pEnv("PEERS_HI"),
-	}
-	PeersGrace = cli.DurationFlag{
-		Name:     "p2p.peers.grace",
-		Usage:    "Grace period to keep a newly connected peer around, if it is not misbehaving.",
-		Required: false,
-		Value:    30 * time.Second,
-		EnvVar:   p2pEnv("PEERS_GRACE"),
+		Value:    60,
+		EnvVar:   p2pEnv("P2P_MAX_PEERS"),
 	}
 	NAT = cli.BoolFlag{
 		Name:     "p2p.nat",
@@ -345,13 +331,11 @@ var p2pFlags = []cli.Flag{
 	StaticPeers,
 	HostMux,
 	HostSecurity,
+	MaxPeersFlag,
 	MaxRequestSize,
 	SyncConcurrency,
 	FillEmptyConcurrency,
 	MetaDownloadBatchSize,
-	PeersLo,
-	PeersHi,
-	PeersGrace,
 	NAT,
 	UserAgent,
 	TimeoutNegotiation,

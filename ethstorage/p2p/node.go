@@ -19,7 +19,6 @@ import (
 	"github.com/ethstorage/go-ethstorage/ethstorage/rollup"
 	"github.com/hashicorp/go-multierror"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	"github.com/libp2p/go-libp2p/core/connmgr"
 	"github.com/libp2p/go-libp2p/core/host"
 	p2pmetrics "github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -29,9 +28,8 @@ import (
 
 // NodeP2P is a p2p node, which can be used to gossip messages.
 type NodeP2P struct {
-	host    host.Host           // p2p host (optional, may be nil)
-	gater   ConnectionGater     // p2p gater, to ban/unban peers with, may be nil even with p2p enabled
-	connMgr connmgr.ConnManager // p2p conn manager, to keep a reliable number of peers, may be nil even with p2p enabled
+	host    host.Host       // p2p host (optional, may be nil)
+	gater   ConnectionGater // p2p gater, to ban/unban peers with, may be nil even with p2p enabled
 	isIPSet bool
 	// the below components are all optional, and may be nil. They require the host to not be nil.
 	dv5Local       *enode.LocalNode // p2p discovery identity
@@ -82,7 +80,6 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 		// Enable extra features, if any. During testing we don't setup the most advanced host all the time.
 		if extra, ok := n.host.(ExtraHostFeatures); ok {
 			n.gater = extra.ConnectionGater()
-			n.connMgr = extra.ConnectionManager()
 		}
 
 		// Activate the P2P req-resp sync
@@ -131,7 +128,7 @@ func (n *NodeP2P) init(resourcesCtx context.Context, rollupCfg *rollup.EsConfig,
 				n.syncCl.RemovePeer(conn.RemotePeer())
 			},
 		})
-		n.syncCl.UpdateMaxPeers(int(setup.(*Config).PeersHi))
+
 		// the host may already be connected to peers, add them all to the sync client
 		for _, conn := range n.host.Network().Conns() {
 			shards := make(map[common.Address][]uint64)
@@ -224,10 +221,6 @@ func (n *NodeP2P) Dv5Local() *enode.LocalNode {
 
 func (n *NodeP2P) Dv5Udp() *discover.UDPv5 {
 	return n.dv5Udp
-}
-
-func (n *NodeP2P) ConnectionManager() connmgr.ConnManager {
-	return n.connMgr
 }
 
 func (n *NodeP2P) Start() error {
