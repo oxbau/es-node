@@ -42,8 +42,6 @@ const (
 	// after the rate-limit reservation hits the max throttle delay, give up on serving a request and just close the stream
 	maxThrottleDelay = time.Second * 20
 
-	defaultMaxPeerCount = 30
-
 	defaultMinPeersPerShard = 5
 
 	minSubTaskSize = 16
@@ -214,8 +212,8 @@ func NewSyncClient(log log.Logger, cfg *rollup.EsConfig, newStream newStreamFn, 
 		resCancel:                  cancel,
 		storageManager:             storageManager,
 		prover:                     prv.NewKZGProver(log),
-		maxPeers:                   defaultMaxPeerCount,
-		minPeersPerShard:           getMinPeersPerShard(defaultMaxPeerCount, shardCount),
+		maxPeers:                   int(params.MaxPeers),
+		minPeersPerShard:           getMinPeersPerShard(int(params.MaxPeers), shardCount),
 		syncerParams:               params,
 	}
 	return c
