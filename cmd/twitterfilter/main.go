@@ -181,7 +181,7 @@ func (f *Filter) StartFiltering() {
 		// recordTime, address, email, twitterUrl := items[0], items[2], items[1], items[3]
 		recordTime, address, email, twitterUrl := items[5], items[1], items[3], items[2]
 
-		if !strings.HasPrefix(items[2], "https://twitter.com/") && !strings.HasPrefix(twitterUrl, "https://x.com/") {
+		if !strings.HasPrefix(twitterUrl, "https://twitter.com/") && !strings.HasPrefix(twitterUrl, "https://x.com/") {
 			continue
 		}
 
