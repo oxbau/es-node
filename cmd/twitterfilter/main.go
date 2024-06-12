@@ -18,7 +18,7 @@ import (
 
 const (
 	batchSize    = 100
-	twitterToken = "AAAAAAAAAAAAAAAAAAAAAH9GswEAAAAAAblgkjd092bCcLoTkrASEk2i05Y%3DExcjsVl6mPL1hcbDy2OIs18kVsbwXBjIe9m1nP6h3u9zgOVbir"
+	twitterToken = "AAAAAAAAAAAAAAAAAAAAANi0uAEAAAAAYprlmmVAGPG1NCZx6aDVsi0XtxE%3DTB4xjPZMngFzp6QGkI5SAT3HwyH61zPwahcX94cmF8dGXQeQnq"
 )
 
 var (
@@ -36,10 +36,12 @@ type Result struct {
 	} `json:"data"`
 	Includes struct {
 		Users []struct {
-			ID          string `json:"id"`
-			Username    string `json:"username"`
-			Name        string `json:"name"`
-			Description string `json:"description"`
+			ID          string    `json:"id"`
+			Username    string    `json:"username"`
+			Name        string    `json:"name"`
+			CreatedAt   time.Time `json:"created_at"`
+			Description string    `json:"description"`
+			Verified    bool      `json:"verified"`
 			Metrics     struct {
 				Followers  int `json:"followers_count"`
 				TweetCount int `json:"tweet_count"`
@@ -64,6 +66,7 @@ type TwitterUser struct {
 	Account     string
 	Name        string
 	Description string
+	CreateAt    time.Time
 
 	Followers  int
 	TweetCount int
@@ -84,9 +87,9 @@ type Record struct {
 }
 
 func (r *Record) String() string {
-	return fmt.Sprintf("\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%s\"\n",
-		r.RecordId, r.RecodeTime, r.Address.Hex(), r.Email, r.Tweet.TweetUrl, r.TwitterUser.Account, r.TwitterUser.Followers, r.TwitterUser.TweetCount,
-		removeCharacters(r.TwitterUser.Name), removeCharacters(r.TwitterUser.Description), removeCharacters(r.Tweet.Text))
+	return fmt.Sprintf("\"%d\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%v\",\"%s\",\"%s\",\"%s\"\n",
+		r.RecordId, r.RecodeTime, r.Address.Hex(), r.Email, r.TwitterUser.CreateAt.Format("2006-01-02"), r.Tweet.TweetUrl, r.TwitterUser.Account, r.TwitterUser.Followers, r.TwitterUser.TweetCount,
+		strings.Contains(r.Tweet.Text, "@EthStorage"), removeCharacters(r.TwitterUser.Name), removeCharacters(r.TwitterUser.Description), removeCharacters(r.Tweet.Text))
 }
 
 func (r *Record) StringError() string {
@@ -103,7 +106,7 @@ func removeCharacters(in string) string {
 }
 
 func PassHeader() string {
-	return "\"RecodeId\",\"RecodeTime\",\"Address\",\"Email\",\"TweetUrl\",\"Account\",\"Followers\",\"TweetCount\",\"UserName\",\"Description\",\"Text\",\"Error\"\n"
+	return "\"RecodeId\",\"RecodeTime\",\"Address\",\"Email\",\"CreateAt\",\"TweetUrl\",\"Account\",\"Followers\",\"TweetCount\",\"@EthStorage\",\"UserName\",\"Description\",\"Text\"\n"
 }
 
 func FilterOutHeader() string {
@@ -175,8 +178,8 @@ func (f *Filter) StartFiltering() {
 			continue
 		}
 		//	recordTime, address, email, twitterUrl := items[0], items[2], items[5], items[3]
-		recordTime, address, email, twitterUrl := items[0], items[2], items[1], items[3]
-		// recordTime, address, email, twitterUrl := items[5], items[1], items[3], items[2]
+		// recordTime, address, email, twitterUrl := items[0], items[2], items[1], items[3]
+		recordTime, address, email, twitterUrl := items[5], items[1], items[3], items[2]
 
 		if !strings.HasPrefix(items[2], "https://twitter.com/") && !strings.HasPrefix(twitterUrl, "https://x.com/") {
 			continue
@@ -254,6 +257,7 @@ func (f *Filter) FetchBatchAndOutput(batch []*Record) {
 			Account:     user.Username,
 			Name:        user.Name,
 			Description: user.Description,
+			CreateAt:    user.CreatedAt,
 			Followers:   user.Metrics.Followers,
 			TweetCount:  user.Metrics.TweetCount,
 		}
@@ -303,6 +307,18 @@ func (f *Filter) FetchBatchAndOutput(batch []*Record) {
 			continue
 		}
 
+		if user.TweetCount < 10 {
+			r.Error = fmt.Sprintf("Twitter user has less than 10 tweets (%d).", user.TweetCount)
+			f.filterOutFile.WriteString(r.StringError())
+			continue
+		}
+
+		if user.CreateAt.Compare(time.Now().AddDate(0, -6, 0)) > 0 {
+			r.Error = fmt.Sprintf("Twitter user created time less than 6 months (%v).", user.CreateAt)
+			f.filterOutFile.WriteString(r.StringError())
+			continue
+		}
+
 		r.Tweet.UserId = tweet.UserId
 		r.Tweet.Text = tweet.Text
 		r.TwitterUser = user
@@ -330,7 +346,7 @@ func getTweetID(url string) (string, error) {
 
 func authTwitterWithToken(tweetIDs string, token string) (*Result, error) {
 	// Query the Tweet details from Twitter
-	url := fmt.Sprintf("https://api.twitter.com/2/tweets/?ids=%s&expansions=author_id&user.fields=public_metrics,description", tweetIDs)
+	url := fmt.Sprintf("https://api.twitter.com/2/tweets/?ids=%s&expansions=author_id&user.fields=created_at,public_metrics,verified,description", tweetIDs)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
