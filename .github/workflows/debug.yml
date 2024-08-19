@@ -25,5 +25,5 @@ jobs:
           npm install --force
           go build
           ./test 
-          ./test.js
           ./test 1
+          ./test.js
