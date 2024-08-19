@@ -3,7 +3,7 @@ on: [push]
 
 jobs:
   es-node-integration-test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 2880
 
     steps:
