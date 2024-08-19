@@ -1,0 +1,29 @@
+name: Integration Test
+on: [push]
+
+jobs:
+  es-node-integration-test:
+    runs-on: self-hosted
+    timeout-minutes: 2880
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: Test
+        run: |
+          cd ./integration_tests/test 
+          npm install --force
+          go build
+          ./test 
+          ./test.js
+          ./test 1
