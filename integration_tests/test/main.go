@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+	fmt.Println("=======starting========")
 	if len(os.Args) == 0 {
 		fmt.Println("exit with null")
 		return
