@@ -10,7 +10,8 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run tests
-        run: echo ES_NODE_CONTRACT_ADDRESS=`0x5C935469C5592Aeeac3372e922d9bCEabDF8830d` >> "$GITHUB_ENV"
+        run: |
+          echo ES_NODE_CONTRACT_ADDRESS=`0x5C935469C5592Aeeac3372e922d9bCEabDF8830d` >> "$GITHUB_ENV"
 
       - name: Notify on Slack
         if: always()  # 无论成功或失败，始终发送通知
