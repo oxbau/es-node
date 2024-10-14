@@ -1,51 +1,31 @@
-name: test
+name: CI Workflow
 
 on: [push]
 
 jobs:
-  send_notification:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Run your tests or actions
-        run: |
-          # 这里执行一些任务并生成结果文件
-          echo "Test Output" > result.txt
-          echo ES_NODE_CONTRACT_ADDRESS=`0x5C935469C5592Aeeac3372e922d9bCEabDF8830d` >> "$GITHUB_ENV"
+      - name: Run tests
+        run: echo ES_NODE_CONTRACT_ADDRESS=`0x5C935469C5592Aeeac3372e922d9bCEabDF8830d` >> "$GITHUB_ENV"
 
-      - name: Upload artifact for attachment
-        uses: actions/upload-artifact@v3
+      - name: Notify on Slack
+        if: always()  # 无论成功或失败，始终发送通知
+        uses: slackapi/slack-github-action@v1.23.0
         with:
-          name: result-log
-          path: result.txt  # 上传 result.txt 文件作为 artifact
+          slack-message: |
+            工作流 ${{ github.workflow }} 已完成。
+            状态: ${{ job.status }}
+            触发者: ${{ github.actor }}
+            仓库: ${{ github.repository }}
+            Contract: $ES_NODE_CONTRACT_ADDRESS
+            Contract1: ${{ ES_NODE_CONTRACT_ADDRESS }}
+            Contract2: ${{ $ES_NODE_CONTRACT_ADDRESS }}
 
-      - name: Notify Slack with result
-        uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  # Slack Incoming Webhook URL
-        with:
-          username: 'GitHub Action Bot'  # 显示的 bot 名称
-          channel: ${{ secrets.SLACK_CHANNEL }}  # 发送到的频道或用户
-          color: '#00FF00'  # 消息的颜色
-          message: 'GitHub Action job completed. Please find the attached result file.'
-          attachments: |
-            [{
-              "fallback": "Result log file",
-              "color": "#36a64f",
-              "pretext": "Job result attachment",
-              "title": "Result log",
-              "text": "You can download the result log here",
-              "actions": [
-                {
-                  "type": "button",
-                  "text": "Download log",
-                  "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                }
-              ]
-            }]
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      - name: Clean up
-        run: |
-          rm result.txt  # 删除生成的日志文件
+
