@@ -22,7 +22,7 @@ jobs:
             状态: ${{ job.status }}
             触发者: ${{ github.actor }}
             仓库: ${{ github.repository }}
-            合约：$ES_NODE_CONTRACT_ADDRESS
+            合约：${{ ES_NODE_CONTRACT_ADDRESS }}
 
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
