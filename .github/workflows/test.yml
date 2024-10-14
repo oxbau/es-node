@@ -1,0 +1,25 @@
+name: CI Workflow
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run tests
+        run: npm test
+
+      - name: Notify on Slack
+        if: always()  # 无论成功或失败，始终发送通知
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          slack-message: |
+            工作流 ${{ github.workflow }} 已完成。
+            状态: ${{ job.status }}
+            触发者: ${{ github.actor }}
+            仓库: ${{ github.repository }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
