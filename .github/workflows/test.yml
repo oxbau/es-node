@@ -2,63 +2,56 @@ name: CI Workflow
 
 on: [push]
 
+
 jobs:
-  send_notification:
+  es-node-integration-test:
     runs-on: ubuntu-latest
+
     steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
 
-      - name: Run your tests or actions
+      - name: Build and Run Bootnode Node
         run: |
-          # 这里执行一些任务并生成结果文件
-          echo "Test Output" > result.txt
+          echo "Test Build and Run Bootnode Node" >  es-node-it-bootnode.log&
 
-      - name: Upload artifact for attachment
+      - name: Upload Blobs
+        run: |
+          mkdir integration
+          echo "Test Upload Blobs" > ./integration/upload.log
+
+      - name: Test
+        run: |
+          mkdir cmd
+          cd cmd
+          mkdir integration-test-server
+          cd ..          
+          echo "Test ES-Node" >  es-node-it.log&
+          echo "Test ItServer" >  ./cmd/integration-test-server/itserver.log 
+
+      - name: Upload Logs
         uses: actions/upload-artifact@v4
         with:
           name: result-log
-          path: result.txt  # 上传 result.txt 文件作为 artifact
-
-      - name: Notify Slack with result
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  # Slack Incoming Webhook URL
-          SLACK_CHANNEL: general
-          SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
-          SLACK_ICON: https://github.com/rtCamp.png?size=48
-          SLACK_MESSAGE: 'Post Content :rocket:'
-          SLACK_TITLE: Post Title
-          SLACK_USERNAME: rtCamp
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        with:
-          username: 'GitHub Action Bot'  # 显示的 bot 名称
-          channel: ${{ secrets.SLACK_CHANNEL }}  # 发送到的频道或用户
-          color: '#00FF00'  # 消息的颜色
-          message: 'GitHub Action job completed. Please find the attached result file.'
-          attachments: |
-            [{
-              "fallback": "Result log file",
-              "color": "#36a64f",
-              "pretext": "Job result attachment",
-              "title": "Result log",
-              "text": "You can download the result log here",
-              "actions": [
-                {
-                  "type": "button",
-                  "text": "Download log",
-                  "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                }
-              ]
-            }]
-
-      - name: Clean up
-        run: |
-          rm result.txt  # 删除生成的日志文件
+          path: |
+            deploy.log  
+            es-node-it-bootnode.log
+            ./integration/upload.log
+            es-node-it.log
+            ./cmd/integration-test-server/itserver.log 
 
 
