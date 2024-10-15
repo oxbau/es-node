@@ -3,28 +3,38 @@ name: CI Workflow
 on: [push]
 
 jobs:
-  build:
+  send_notification:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Run tests
+      - name: Run your tests or actions
         run: |
-          echo ES_NODE_CONTRACT_ADDRESS=`0x5C935469C5592Aeeac3372e922d9bCEabDF8830d` >> "$GITHUB_ENV"
+          # 这里执行一些任务并生成结果文件
+          echo "Test Output" > result.txt
 
-      - name: Notify on Slack
-        if: always()  # 无论成功或失败，始终发送通知
-        uses: slackapi/slack-github-action@v1.23.0
+      - name: Upload artifact for attachment
+        uses: actions/upload-artifact@v4
         with:
-          slack-message: |
-            工作流 ${{ github.workflow }} 已完成。
-            状态: ${{ job.status }}
-            触发者: ${{ github.actor }}
-            仓库: ${{ github.repository }}
-            合约：{{ $ES_NODE_CONTRACT_ADDRESS }}
+          name: result-log
+          path: result.txt  # 上传 result.txt 文件作为 artifact
 
+      - name: Notify Slack with result
+        uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  # Slack Incoming Webhook URL
+          SLACK_CHANNEL: general
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
+          SLACK_ICON: https://github.com/rtCamp.png?size=48
+          SLACK_MESSAGE: 'Post Content :rocket:'
+          SLACK_TITLE: Post Title
+          SLACK_USERNAME: rtCamp
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+
+      - name: Clean up
+        run: |
+          rm result.txt  # 删除生成的日志文件
 
 
