@@ -41,6 +41,7 @@ jobs:
 
       - name: Upload Logs
         uses: actions/upload-artifact@v4
+        if: always()  # 无论上一步是否失败，都会执行这个步骤
         with:
           name: result-log
           path: |
