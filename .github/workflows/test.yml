@@ -36,10 +36,6 @@ jobs:
 
       - name: Test
         run: |
-          mkdir cmd
-          cd cmd
-          mkdir integration-test-server
-          cd ..          
           echo "Test ES-Node" >  es-node-it.log&
           echo "Test ItServer" >  ./cmd/integration-test-server/itserver.log 
 
