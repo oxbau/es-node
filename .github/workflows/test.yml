@@ -31,7 +31,26 @@ jobs:
           SLACK_TITLE: Post Title
           SLACK_USERNAME: rtCamp
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-
+        with:
+          username: 'GitHub Action Bot'  # 显示的 bot 名称
+          channel: ${{ secrets.SLACK_CHANNEL }}  # 发送到的频道或用户
+          color: '#00FF00'  # 消息的颜色
+          message: 'GitHub Action job completed. Please find the attached result file.'
+          attachments: |
+            [{
+              "fallback": "Result log file",
+              "color": "#36a64f",
+              "pretext": "Job result attachment",
+              "title": "Result log",
+              "text": "You can download the result log here",
+              "actions": [
+                {
+                  "type": "button",
+                  "text": "Download log",
+                  "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                }
+              ]
+            }]
 
       - name: Clean up
         run: |
