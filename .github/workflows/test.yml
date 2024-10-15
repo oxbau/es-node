@@ -33,6 +33,7 @@ jobs:
         run: |
           mkdir integration
           echo "Test Upload Blobs" > ./integration/upload.log
+          exit 1
 
       - name: Test
         run: |
