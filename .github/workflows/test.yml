@@ -56,7 +56,7 @@ jobs:
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com  # 使用 Gmail SMTP
-          server_port: 587
+          server_port: 465
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: GitHub Actions Workflow Notification -- integration test ${{ job.status }}
