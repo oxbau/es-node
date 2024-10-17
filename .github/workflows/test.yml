@@ -28,6 +28,7 @@ jobs:
       - name: Build and Run Bootnode Node
         run: |
           echo "Test Build and Run Bootnode Node" >  es-node-it-bootnode.log&
+          exit 1
 
       - name: Upload Blobs
         run: |
