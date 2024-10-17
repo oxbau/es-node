@@ -63,4 +63,4 @@ jobs:
           to: pingke@gmail.com
           from: ${{ secrets.SMTP_USERNAME }}  # 发件人邮箱
           body: |
-            Build ${{ github.run_number }} of ${{ github.repository }} completed with status: ${{ job.status }}.
+            "GitHub Action job completed with status: ${{ job.status }}! Check the details at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
