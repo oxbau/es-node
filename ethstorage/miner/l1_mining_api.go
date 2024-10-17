@@ -93,7 +93,7 @@ func (m *l1MiningAPI) SubmitMinedResult(ctx context.Context, contract common.Add
 
 	tip, gasFeeCap, useConfig, err := m.suggestGasPrices(ctx, cfg)
 	if err != nil {
-		m.lg.Error("Failed to suggest gas prices", "error", err)
+		m.lg.Warn("Failed to suggest gas prices", "error", err)
 		return common.Hash{}, err
 	}
 	estimatedGas, err := m.EstimateGas(ctx, ethereum.CallMsg{

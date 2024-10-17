@@ -3,5 +3,7 @@ notifications:
   email:
     recipients:
       - molaokp@gmail.com
+      - qizhou@quarkchain.org
+      - lundeng@quarkchain.org
     on_success: always
     on_failure: always
