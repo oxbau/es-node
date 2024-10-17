@@ -60,7 +60,7 @@ jobs:
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: GitHub Actions Workflow Notification -- integration test ${{ job.status }}
-          to: pingke@gmail.com
+          to: molaokp@gmail.com,lundeng@quarkchain.org,qzhu@quarkchain.org
           from: ${{ secrets.SMTP_USERNAME }}  # 发件人邮箱
           body: |
             "GitHub Action job completed with status: ${{ job.status }}! Check the details at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
