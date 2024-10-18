@@ -44,7 +44,6 @@ jobs:
   upload:
     if: ${{ always() }}
     needs: integration-test
-    runs-on: ubuntu-latest
     steps:
       - name: Upload Logs
         uses: actions/upload-artifact@v4
@@ -60,7 +59,6 @@ jobs:
   notification:
     if: ${{ always() }}
     needs: [upload, integration-test]
-    runs-on: ubuntu-latest
     steps:
       - name: Send notification email
         uses: dawidd6/action-send-mail@v3
