@@ -4,9 +4,10 @@ on: [push]
 
 
 jobs:
-  es-node-integration-test:
+  integration-test:
     runs-on: ubuntu-latest
-
+    outputs:
+      test_status: ${{ job.status }}
     steps:
       - uses: actions/checkout@v3
 
@@ -40,9 +41,13 @@ jobs:
           echo "Test ES-Node" >  es-node-it.log&
           echo "Test ItServer" >  ./cmd/integration-test-server/itserver.log 
 
+  upload:
+    if: ${{ always() }}
+    needs: integration-test
+    runs-on: ubuntu-latest
+    steps:
       - name: Upload Logs
         uses: actions/upload-artifact@v4
-        if: always()  # 无论上一步是否失败，都会执行这个步骤
         with:
           name: result-log
           path: |
@@ -54,19 +59,18 @@ jobs:
 
   notification:
     if: ${{ always() }}
-    needs: es-node-integration-test
+    needs: [upload, integration-test]
     runs-on: ubuntu-latest
     steps:
       - name: Send notification email
-        if: always()  # 无论成功或失败都发送通知
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com  # 使用 Gmail SMTP
           server_port: 465
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: ${{ github.repository }} GitHub Actions ${{ github.workflow }} Run ${{ job.status }} - ${{ github.sha }}
+          subject: ${{ github.repository }} GitHub Actions ${{ github.workflow }} Run ${{ needs.integration-test.outputs.test_status }} - ${{ github.sha }}
           to: molaokp@gmail.com,lundeng@quarkchain.org,qzhu@quarkchain.org
           from: ${{ secrets.SMTP_USERNAME }}  # 发件人邮箱
           body: |
-            "GitHub Action job completed with status: ${{ job.status }}! Check the details at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            "GitHub Action job completed with status: ${{ needs.integration-test.outputs.test_status }}! Check the details at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
