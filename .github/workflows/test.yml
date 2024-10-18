@@ -52,6 +52,11 @@ jobs:
             es-node-it.log
             ./cmd/integration-test-server/itserver.log 
 
+  notification:
+    if: ${{ always() }}
+    needs: es-node-integration-test
+    runs-on: ubuntu-latest
+    steps:
       - name: Send notification email
         if: always()  # 无论成功或失败都发送通知
         uses: dawidd6/action-send-mail@v3
