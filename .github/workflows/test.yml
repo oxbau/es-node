@@ -54,7 +54,7 @@ jobs:
 
   notification:
     if: ${{ always() }}
-    needs: [upload, integration-test]
+    needs: integration-test
     runs-on: ubuntu-latest
     steps:
       - name: Send notification email
