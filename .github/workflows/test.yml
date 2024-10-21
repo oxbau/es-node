@@ -29,7 +29,6 @@ jobs:
       - name: Build and Run Bootnode Node
         run: |
           echo "Test Build and Run Bootnode Node" >  es-node-it-bootnode.log&
-          exit 1
 
       - name: Upload Blobs
         run: |
@@ -55,7 +54,7 @@ jobs:
   notification:
     if: ${{ always() }}
     needs: integration-test
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Send notification email
         uses: dawidd6/action-send-mail@v3
