@@ -5,7 +5,7 @@ on: [push]
 
 jobs:
   integration-test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       test_status: ${{ job.status }}
     steps:
@@ -55,7 +55,7 @@ jobs:
   notification:
     if: ${{ always() }}
     needs: integration-test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Send notification email
         uses: dawidd6/action-send-mail@v3
